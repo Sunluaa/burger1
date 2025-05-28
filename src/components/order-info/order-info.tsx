@@ -1,83 +1,69 @@
 import { FC, useEffect, useMemo } from 'react';
-import { Preloader, OrderInfoUI } from '@ui';
+import { Preloader } from '../ui/preloader';
+import { OrderInfoUI } from '../ui/order-info';
 import { TIngredient } from '@utils-types';
+import { useDispatch, useSelector } from '@store';
+import { fetchOrder } from '../../services/slices/orders';
 import { useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from '../../services/store';
-import { selectAllIngredients } from '../../slices/ingredients-slice';
-import { fetchOrderNumber, selectOrderDataByNumber } from '../../slices/order-slice';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const { number = '' } = useParams<{ number: string }>();
+	/** TODO: взять переменные orderData и ingredients из стора */
+	const dispatch = useDispatch();
+	const { number } = useParams<{ number: string }>();
 
-  const dispatch = useDispatch();
-  const ingredients: TIngredient[] = useSelector(selectAllIngredients);
+	const {isOrderLoading, orderModalData: orderData} = useSelector(store => store.ordersReducer);
 
-  const orderData = useSelector(selectOrderDataByNumber(number));
+	const {isLoading: isIngredientsLoading, data: ingredients} = useSelector(store => store.ingredientsReducer);
 
-  useEffect(() => {
-    if (!orderData) {
-      dispatch(fetchOrderNumber(Number(number)));
-    } // orderData кэшируется
-  }, [dispatch, orderData, number]);
+	useEffect(() => {
+		dispatch(fetchOrder(Number(number)));
+	  }, [dispatch]);
 
-  // const orderData = {
-  //   createdAt: '',
-  //   ingredients: [],
-  //   _id: '',
-  //   status: '',
-  //   name: '',
-  //   updatedAt: 'string',
-  //   number: 0
-  // };
+	/* Готовим данные для отображения */
+	const orderInfo = useMemo(() => {
+		if (!orderData || !ingredients.length) return null;
 
-  // const ingredients: TIngredient[] = [];
+		const date = new Date(orderData.createdAt);
 
-  /* Готовим данные для отображения */
-  const orderInfo = useMemo(() => {
-    if (!orderData || !ingredients.length) return null;
+		type TIngredientsWithCount = {
+			[key: string]: TIngredient & { count: number };
+		};
 
-    const date = new Date(orderData.createdAt);
+		const ingredientsInfo = orderData.ingredients.reduce(
+			(acc: TIngredientsWithCount, item) => {
+				if (!acc[item]) {
+					const ingredient = ingredients.find((ing) => ing._id === item);
+					if (ingredient) {
+						acc[item] = {
+							...ingredient,
+							count: 1,
+						};
+					}
+				} else {
+					acc[item].count++;
+				}
 
-    type TIngredientsWithCount = {
-      [key: string]: TIngredient & { count: number };
-    };
+				return acc;
+			},
+			{}
+		);
 
-    const ingredientsInfo = orderData.ingredients.reduce(
-      (acc: TIngredientsWithCount, item) => {
-        if (!acc[item]) {
-          const ingredient = ingredients.find((ing) => ing._id === item);
-          if (ingredient) {
-            acc[item] = {
-              ...ingredient,
-              count: 1
-            };
-          }
-        } else {
-          acc[item].count++;
-        }
+		const total = Object.values(ingredientsInfo).reduce(
+			(acc, item) => acc + item.price * item.count,
+			0
+		);
 
-        return acc;
-      },
-      {}
-    );
+		return {
+			...orderData,
+			ingredientsInfo,
+			date,
+			total,
+		};
+	}, [orderData, ingredients]);
 
-    const total = Object.values(ingredientsInfo).reduce(
-      (acc, item) => acc + item.price * item.count,
-      0
-    );
+	if (!orderInfo || isIngredientsLoading || isOrderLoading) {
+		return <Preloader />;
+	}
 
-    return {
-      ...orderData,
-      ingredientsInfo,
-      date,
-      total
-    };
-  }, [orderData, ingredients]);
-
-  if (!orderInfo) {
-    return <Preloader />;
-  }
-
-  return <OrderInfoUI orderInfo={orderInfo} />;
+	return <OrderInfoUI orderInfo={orderInfo} />;
 };

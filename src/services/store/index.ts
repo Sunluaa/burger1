@@ -12,7 +12,7 @@ import { reducer as feedsReducer } from '../slices/feeds';
 import { reducer as userReducer } from '../slices/user';
 import { middleware as ordersMiddleware} from '../middlewares/orders';
 
-const rootReducer = combineReducers({
+export const rootReducer = combineReducers({
 	ingredientsReducer,
 	ordersReducer,
 	builderReducer,

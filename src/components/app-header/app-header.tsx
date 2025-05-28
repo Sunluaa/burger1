@@ -1,13 +1,9 @@
 import { FC } from 'react';
 import { AppHeaderUI } from '@ui';
-import { useSelector } from '../../services/store';
-import { selectUserData } from '../../slices/user-slice';
+import { useSelector } from '@store';
 
 export const AppHeader: FC = () => {
-  const user = useSelector(selectUserData);
-
-  // проверка что user имеет поле name
-  const userName = user ? user.name : undefined;
-
-  return <AppHeaderUI userName={userName} />;
+    const { data } = useSelector((state) => state.userReducer);
+  
+    return <AppHeaderUI userName={data.name} />;
 };
