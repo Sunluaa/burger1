@@ -11,15 +11,18 @@
 
 .menu_part_left {
   display: flex;
-  flex-basis: 35%;
+   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.link {
+.link, .link_active {
   display: flex;
+  align-items: center;
   text-decoration: none;
+}
+.link {
   color: var(--text-inactive-color);
 }
-
 .link_active {
   color: var(--text-primary-color);
 }
@@ -27,7 +30,7 @@
 .link_position_last {
   display: flex;
   justify-content: flex-end;
-  flex-basis: 35%;
+
 }
 
 .logo {
